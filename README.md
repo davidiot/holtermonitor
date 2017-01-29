@@ -5,10 +5,10 @@ Aiden Harwood (ath23), David Zhou (dz54), Gautam Chebrolu (gsc13), Katie Gelman 
 
 BME 464L: Medical Instrument Design
 
-# Instructions:
+## Instructions:
 
 + put electrodes on your body and become a cyborg.
 
-# Known Issues:
+## Known Issues:
 
 + none yet!

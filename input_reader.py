@@ -76,7 +76,7 @@ def read_bin(filename="ecg.bin", folder="data/"):
         message = filename + " was not a binary file"
         log.error(message)
         raise hme.InvalidFormatError(message)
-    data = np.fromfile(file_path(folder, filename), dtype=np.int8)
+    data = np.fromfile(file_path(folder, filename), dtype=np.int16)
 
     check_data(data)
 

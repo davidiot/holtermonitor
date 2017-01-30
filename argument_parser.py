@@ -54,4 +54,11 @@ def parse_arguments():
                      help='Sets the logging level. Choose from {0}'
                           .format(log_levels))
 
+    par.add_argument("--ui",
+                     dest="ui",
+                     action="store_true",
+                     help="Run the program using a user interface"
+                          "(invoke to turn on)")
+    par.set_defaults(ui=False)
+
     return par.parse_args()

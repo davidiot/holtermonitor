@@ -1,0 +1,5 @@
+lvm-read==1.13
+h5py==2.6.0
+scipy==0.18.1
+numpy==1.11.1
+python-dateutil==2.5.3

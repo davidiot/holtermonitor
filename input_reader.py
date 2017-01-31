@@ -25,8 +25,13 @@ def read_lvm(filename="ecg.lvm", folder="data/"):
         raise hme.InvalidFormatError(message)
     data = lr.read(file_path(folder, filename))
 
+    if data["Segments"] != 1:
+        message = "multiple segments detected in " + filename
+        log.error(message)
+        raise hme.InvalidFormatError(message)
+
     log.debug("successfully read and constructed ecg data from " + filename)
-    return data
+    return data[0]
 
 
 def read_json(filename="metadata.json", folder="data/",

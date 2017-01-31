@@ -38,11 +38,11 @@ def parse_arguments():
 
     par.add_argument("--data",
                      dest="data",
-                     help="sinogram data filename (.bin, .mat, or .h5)",
-                     default="sinogram.bin")
+                     help="LabView data filename",
+                     default="ecg.lvm")
 
-    par.add_argument("--input",
-                     dest="input",
+    par.add_argument("--path",
+                     dest="path",
                      help="path to folder containing input files",
                      default="data/")
 

@@ -1,5 +1,6 @@
 import logging
 import argument_parser as ap
+import input_reader as ir
 
 if __name__ == "__main__":
     args = ap.parse_arguments()
@@ -15,4 +16,8 @@ if __name__ == "__main__":
     if args.ui:
         pass
     else:
-        pass
+        lvm = ir.read_lvm(args.data, args.path)
+        data = lvm['data']
+        import matplotlib.pyplot as plt
+        plt.plot(data[:, 0], data[:, 1], 'k-')
+        plt.show()

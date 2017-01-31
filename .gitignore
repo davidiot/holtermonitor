@@ -1,2 +1,8 @@
 # ignore files created by PyCharm
 .idea/
+## ignore things made by pytest
+.cache/*
+__pycache__/
+.coverage
+## ignore logging file
+holter_monitor_log.txt

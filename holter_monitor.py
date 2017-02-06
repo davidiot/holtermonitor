@@ -1,6 +1,7 @@
 import logging
 import argument_parser as ap
 import input_reader as ir
+import waveform_plotter as wp
 
 if __name__ == "__main__":
     args = ap.parse_arguments()
@@ -17,7 +18,6 @@ if __name__ == "__main__":
         pass
     else:
         lvm = ir.read_lvm(args.data, args.path)
-        data = lvm['data']
-        import matplotlib.pyplot as plt
-        plt.plot(data[:, 0], data[:, 1], 'k-')
-        plt.show()
+        import numpy as np
+        wp.render_interactive_plot(lvm, np.array(
+            [[500, 55], [2400, 35], [3000, 95], [3600, 5], [4750, 42]]))

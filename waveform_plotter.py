@@ -2,6 +2,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import mpld3
 import numpy as np
+import bisect as bis
 from mpld3 import plugins, utils
 
 
@@ -61,19 +62,7 @@ def render_interactive_plot(lvm, pvcs, window=3):
     time = data[:, 0]
     time_range = time[len(time) - 1]
     fig, ax = plt.subplots(2)
-
-    # scatter periods and amplitudes
-    # import numpy as np
-    # np.random.seed(0)
-    # P = 0.2 + np.random.random(size=20)
-    # print(P)
-    # A = np.random.random(size=20)
-    # print(A)
-    # x = np.linspace(0, 10, 100)
-    # data = np.array([[x, Ai * np.sin(x / Pi)]
-    #                  for (Ai, Pi) in zip(A, P)])
-    # points = ax[1].scatter(P, A,
-    #                        s=200, alpha=0.5)
+    window_range = bis.bisect_left(time, window)
 
     units = 'seconds'
     divisor = 1
@@ -84,30 +73,38 @@ def render_interactive_plot(lvm, pvcs, window=3):
         units = 'minutes'
         divisor = 60
 
+    # set up timeline
     ax[1].set_xlim(0, time_range / divisor)
     ax[1].set_ylim(0, 100)
     ax[1].yaxis.set_major_formatter(plt.NullFormatter())
     ax[1].yaxis.set_ticks([])
     ax[1].set_xlabel('Timeline (' + units + ')')
     ax[1].set_ylabel('PVC %')
-
-    pvc_times = np.take(time, pvcs[:, 0]) / divisor
-    pvcs_strength = pvcs[:, 1]
-    ax[1].vlines(pvc_times, np.zeros(len(pvc_times)), pvcs_strength)
-    points = ax[1].scatter(pvc_times,
-                           pvcs_strength,
-                           c=pvcs_strength,
-                           s=250, alpha=0.7)
-
-
-
-    # create the line object
-    # lines = ax[0].plot(x, 0 * x, '-w', lw=3, alpha=0.5)
-    # ax[0].set_ylim(-1, 1)
-
     ax[0].set_title("PVC Analyzer")
 
+    pvc_indices = pvcs[:, 0]
+    pvc_times = np.take(time, pvc_indices) / divisor
+    pvc_strengths = pvcs[:, 1]
+    ax[1].vlines(pvc_times, np.zeros(len(pvc_times)), pvc_strengths)
+    points = ax[1].scatter(pvc_times,
+                           pvc_strengths,
+                           c=pvc_strengths,
+                           s=250, alpha=0.7)
+
+    # create the line and data objects
+    x = np.take(time, range(0, window_range))
+    waveform_data = \
+        np.array(
+            [[x,
+              np.take(ecg,
+                      range(index, index + window_range)
+                      if index + window_range <= len(ecg)
+                      else range(len(ecg) - window_range, len(ecg)))]
+             for index in pvc_indices])
+    lines = ax[0].plot(x, 0 * x, '-w', lw=3, alpha=0.5)
+    ax[0].set_ylim(0, 2)
+
     # transpose line data and add plugin
-    # linedata = data.transpose(0, 2, 1).tolist()
-    # plugins.connect(fig, LinkedView(points, lines[0], linedata))
+    linedata = waveform_data.transpose(0, 2, 1).tolist()
+    plugins.connect(fig, LinkedView(points, lines[0], linedata))
     mpld3.show()

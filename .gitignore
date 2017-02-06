@@ -6,3 +6,5 @@ __pycache__/
 .coverage
 ## ignore logging file
 holter_monitor_log.txt
+## ignore binary files created by reading lvms
+data/*.pkl

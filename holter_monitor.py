@@ -19,5 +19,14 @@ if __name__ == "__main__":
     else:
         lvm = ir.read_lvm(args.data, args.path)
         import numpy as np
+        data = lvm['data']
+        # import matplotlib.pyplot as plt
+        # plt.plot(data[:, 0], data[:, 1], 'k-')
+        # plt.show()
         wp.render_interactive_plot(lvm, np.array(
-            [[500, 55], [2400, 35], [3000, 95], [3600, 5], [4750, 42]]))
+            [[12000, 55],
+             [17750, 42],
+             [23800, 73],
+             [141800, 64],
+             [148000, 36],
+             [154000, 81]]))

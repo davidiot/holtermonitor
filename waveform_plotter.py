@@ -200,10 +200,7 @@ def render_interactive_plot(lvm, pvcs, window=3):
 
     plugins.connect(fig, LinkedView(points, lines[0], linedata, labels))
 
-    # TODO: delete this when the tooltip is working
-    # tooltip = mpld3.plugins.PointLabelTooltip(points, labels=labels)
-    # mpld3.plugins.connect(fig, tooltip)
-
+    mpld3.save_html(fig, "pvcs.html")
     mpld3.show()
 
 

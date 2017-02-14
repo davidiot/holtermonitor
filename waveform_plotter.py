@@ -15,7 +15,10 @@ class LinkedView(plugins.PluginBase):
     mpld3.register_plugin("linkedview", LinkedViewPlugin);
     LinkedViewPlugin.prototype = Object.create(mpld3.Plugin.prototype);
     LinkedViewPlugin.prototype.constructor = LinkedViewPlugin;
-    LinkedViewPlugin.prototype.requiredProps = ["idpts", "idline", "data"];
+    LinkedViewPlugin.prototype.requiredProps = ["idpts",
+                                                "idline",
+                                                "data",
+                                                "tooltips"];
     LinkedViewPlugin.prototype.defaultProps ={alpha_bg:0.3,
                                               alpha_fg:1.0,
                                               small_size:1,
@@ -28,11 +31,27 @@ class LinkedView(plugins.PluginBase):
       var pts = mpld3.get_element(this.props.idpts);
       var line = mpld3.get_element(this.props.idline);
       var data = this.props.data;
+      var tooltips = this.props.tooltips;
       alpha_fg = this.props.alpha_fg;
       alpha_bg = this.props.alpha_bg;
       small_size = this.props.small_size;
       large_size = this.props.large_size;
       var sel = null;
+
+      var div = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("position", "absolute")
+            .style("text-align", "center")
+            .style("width", "180px")
+            .style("height", "18px")
+            .style("padding", "2px")
+            .style("font", "12px sans-serif")
+            .style("color", "white")
+            .style("background", "#001A57")
+            .style("border", "0px")
+            .style("border-radius", "8px")
+            .style("pointer-events", "none")
+            .style("opacity", 0);
 
       if (data.length == 0) {
         this.fig.canvas.append("text")
@@ -60,12 +79,34 @@ class LinkedView(plugins.PluginBase):
                             .style("stroke-opacity", alpha_fg)
                             .style("fill-opacity", alpha_fg);
         sel = this;
+
+        div.transition()
+                .duration(250)
+                .style("opacity", .9);
+        div.html(tooltips[i])
+                .style("left", (d3.event.pageX) + "px")
+                .style("top", (d3.event.pageY - 30) + "px");
       }
+
+      function mousemove(d, i){
+        div
+        .style("left", (d3.event.pageX + 5) + "px")
+        .style("top", (d3.event.pageY - 25) + "px");
+      }
+
+      function mouseout(d, i){
+        div.transition()
+            .duration(250)
+            .style("opacity", 0);
+      }
+
       pts.elements().on("mouseover", mouseover);
+      pts.elements().on("mousemove", mousemove);
+      pts.elements().on("mouseout", mouseout);
     };
     """
 
-    def __init__(self, points, line, linedata):
+    def __init__(self, points, line, linedata, labels):
         if isinstance(points, mpl.lines.Line2D):
             suffix = "pts"
         else:
@@ -75,6 +116,7 @@ class LinkedView(plugins.PluginBase):
                       "idpts": utils.get_id(points, suffix),
                       "idline": utils.get_id(line),
                       "data": linedata,
+                      "tooltips": labels,
                       "alpha_bg": 0.3,
                       "alpha_fg": 1.0,
                       "small_size": 1,
@@ -152,5 +194,31 @@ def render_interactive_plot(lvm, pvcs, window=3):
         # No PVCs detected
         linedata = []
         pass
-    plugins.connect(fig, LinkedView(points, lines[0], linedata))
+
+    labels = ['PVC detected at {0}'.format(display_time(time))
+              for time in pvc_times]
+
+    plugins.connect(fig, LinkedView(points, lines[0], linedata, labels))
+
+    # TODO: delete this when the tooltip is working
+    # tooltip = mpld3.plugins.PointLabelTooltip(points, labels=labels)
+    # mpld3.plugins.connect(fig, tooltip)
+
     mpld3.show()
+
+
+def display_time(time):
+    """ converts a time given in seconds to a readable formatted string
+
+    :param time: time in seconds
+    :return: time string
+    """
+
+    if time < 60:
+        return str(int(round(time))) + "s"
+    elif time < 3600:
+        return str(int(time / 60)) + "m " + \
+               str(int(round(time % 60))) + "s"
+    else:
+        return str(int(time / 3600)) + "h " + \
+               str(int(round((time % 3600) / 60))) + "m"

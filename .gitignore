@@ -10,3 +10,6 @@ holter_monitor_log.txt
 data/*.pkl
 ## ignore HTML files created by scripts
 *.html
+
+## ignore super long data file made by script
+data/longdata.lvm

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import mpld3
 import numpy as np
 import bisect as bis
+import bokeh.plotting as bp
 from mpld3 import plugins, utils
 
 
@@ -123,12 +124,13 @@ class LinkedView(plugins.PluginBase):
                       "large_size": 3}
 
 
-def render_pvc_plot(data, pvcs, window=3):
+def render_pvc_plot(data, pvcs, window=3, html_filename="pvcs.html"):
     """ renders an interactive plot in a browser for viewing PVCs over 24 hrs
 
     :param data: ecg data read in from an LVM or binary file
     :param pvcs: an array that stores the indices of the detected PVCs
     :param window: the number of seconds of EKG to display in the top window
+    :param html_filename: the name of the html file where the output is saved
     :return:
     """
 
@@ -175,13 +177,18 @@ def render_pvc_plot(data, pvcs, window=3):
 
     # create the line and data objects
     x = np.take(time, range(0, window_range))
+    half_window = int(window_range / 2)
     waveform_data = \
         np.array(
             [[x,
-              np.take(ecg,
-                      range(index, index + window_range)
-                      if index + window_range <= len(ecg)
-                      else range(len(ecg) - window_range, len(ecg)))]
+              np.take(
+                  ecg,
+                  range(index - half_window, index + half_window)  # in range
+                  if len(ecg) - half_window >= index >= half_window else
+                  (range(len(ecg) - window_range, len(ecg))  # too far on right
+                   if len(ecg) - half_window < index else
+                   range(0, window_range))  # too far on left
+              )]
              for index in pvc_indices])
     lines = ax[0].plot(x, 0 * x, '-w', lw=3, alpha=0.7)
     ax[0].set_ylim(0, 2)
@@ -199,8 +206,22 @@ def render_pvc_plot(data, pvcs, window=3):
 
     plugins.connect(fig, LinkedView(points, lines[0], linedata, labels))
 
-    mpld3.save_html(fig, "pvcs.html")
+    mpld3.save_html(fig, html_filename)
     mpld3.show()
+
+
+def render_full_plot(data, html_filename="fullplot.html"):
+    ecg = data[:, 1]
+    time = data[:, 0]
+
+    bp.output_file(html_filename)
+
+    fig = bp.figure(title="Holter Monitor Data Visualizer",
+                    x_axis_label="time",
+                    y_axis_label="mV")
+
+    fig.line(time, ecg)
+    bp.show(fig)
 
 
 def display_time(time):

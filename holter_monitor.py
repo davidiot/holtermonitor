@@ -18,14 +18,15 @@ if __name__ == "__main__":
         pass
     else:
         data = ir.read_data(args.data, args.path)
-        import numpy as np
         # import matplotlib.pyplot as plt
         # plt.plot(data)
         # plt.show()
-        wp.render_pvc_plot(data, np.array(
-            [[12000, 55],
-             [17750, 42],
-             [23800, 73],
-             [141800, 64],
-             [148000, 36],
-             [154000, 81]]))
+        # import numpy as np
+        # wp.render_pvc_plot(data, np.array(
+        #     [[13500, 55],
+        #      [19250, 42],
+        #      [25300, 73],
+        #      [143300, 64],
+        #      [149500, 36],
+        #      [155500, 81]]))
+        wp.render_full_plot(data)

@@ -123,16 +123,15 @@ class LinkedView(plugins.PluginBase):
                       "large_size": 3}
 
 
-def render_interactive_plot(lvm, pvcs, window=3):
+def render_pvc_plot(data, pvcs, window=3):
     """ renders an interactive plot in a browser for viewing PVCs over 24 hrs
 
-    :param lvm: ecg data read in from an LVM file
+    :param data: ecg data read in from an LVM or binary file
     :param pvcs: an array that stores the indices of the detected PVCs
     :param window: the number of seconds of EKG to display in the top window
     :return:
     """
 
-    data = lvm['data']
     ecg = data[:, 1]
     time = data[:, 0]
     time_range = time[len(time) - 1]

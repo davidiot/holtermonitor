@@ -17,13 +17,12 @@ if __name__ == "__main__":
     if args.ui:
         pass
     else:
-        lvm = ir.read_lvm(args.data, args.path)
+        data = ir.read_data(args.data, args.path)
         import numpy as np
-        data = lvm['data']
         # import matplotlib.pyplot as plt
-        # plt.plot(data[:, 0], data[:, 1], 'k-')
+        # plt.plot(data)
         # plt.show()
-        wp.render_interactive_plot(lvm, np.array(
+        wp.render_pvc_plot(data, np.array(
             [[12000, 55],
              [17750, 42],
              [23800, 73],

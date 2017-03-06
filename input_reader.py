@@ -29,8 +29,8 @@ def read_lvm(filename="ecg.lvm", folder="data/"):
     return data[0]['data']
 
 
-def read_bin(filename="ecg.bin", folder="data/"):
-    """ reads ecg data from a binary (.bin) file
+def read_bin(filename="ecg.npy", folder="data/"):
+    """ reads ecg data from a NumPy (.npy) binary file
 
     :param filename: name of binary file
     :param folder: folder where data files are kept
@@ -38,30 +38,29 @@ def read_bin(filename="ecg.bin", folder="data/"):
     """
 
     extension = os.path.splitext(filename)[1]
-    if extension != ".bin":
-        message = filename + " was not a binary file"
+    if extension != ".npy":
+        message = filename + " was not a NumPy binary file"
         log.error(message)
         raise hme.InvalidFormatError(message)
-    data = np.fromfile(file_path(folder, filename), dtype=np.float16)
+    data = np.load(file_path(folder, filename))
 
     return data
 
 
 def read_data(data_filename="ecg.lvm",
               folder="data/"):
-    """ Reads non-lvm files.  Not used, but might be useful later.
+    """ Read data from a file
 
-    :param data_filename: name of binary or lvm file
+    :param data_filename: name of npy or lvm file
     :param folder: folder where data files are kept
-    :return: ecg data array, metadata dictionary
+    :return: ecg data array
     """
 
     extension = os.path.splitext(data_filename)[1]
     if extension == ".lvm":
         ecg = read_lvm(data_filename, folder)
-    # TODO: uncomment this if binary files are working
-    # elif extension == ".bin":
-    #     ecg = read_bin(data_filename, folder)
+    elif extension == ".npy":
+        ecg = read_bin(data_filename, folder)
     else:
         message = extension + " files are not supported yet"
         log.error(message)
@@ -70,7 +69,7 @@ def read_data(data_filename="ecg.lvm",
     log.debug("successfully read and constructed ecg data from " +
               data_filename)
 
-    return ecg
+    return ecg.astype("float32")
 
 
 def file_path(folder, filename):
@@ -82,3 +81,19 @@ def file_path(folder, filename):
     """
     folder_path = "./" if len(folder) == 0 else folder
     return folder_path + filename
+
+
+def save_binary(data, input_filename, output_filename, folder="data/"):
+    input_extension = os.path.splitext(input_filename)[1]
+    if input_extension == ".npy":
+        message = "input file was already a NumPy binary file"
+        log.error(message)
+        raise hme.InvalidFormatError(message)
+    output_extension = os.path.splitext(output_filename)[1]
+    if output_extension != ".npy":
+        message = "output file is not a NumPy binary file"
+        log.error(message)
+        raise hme.InvalidFormatError(message)
+    output_file = open(file_path(folder, output_filename), 'wb')
+    np.save(output_file, data)
+    output_file.close()

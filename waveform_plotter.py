@@ -214,7 +214,7 @@ def render_full_plot(data, html_filename="fullplot.html"):
     ecg = data[:, 1]
     time = data[:, 0]
 
-    bp.output_file(html_filename)
+    bp.output_file(html_filename, mode="inline")
 
     fig = bp.figure(title="Holter Monitor Data Visualizer",
                     x_axis_label="time",

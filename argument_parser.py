@@ -31,11 +31,6 @@ def parse_arguments():
                                         "contractions.",
                             formatter_class=ap.ArgumentDefaultsHelpFormatter)
 
-    par.add_argument("--json",
-                     dest="json",
-                     help="JSON metadata filename",
-                     default="metadata.json")
-
     par.add_argument("--data",
                      dest="data",
                      help="LabView data filename",
@@ -45,6 +40,11 @@ def parse_arguments():
                      dest="path",
                      help="path to folder containing input files",
                      default="data/")
+
+    par.add_argument("--convert",
+                     dest="convert",
+                     help="convert lvm file to bin file with this filename",
+                     default="")
 
     par.add_argument("--log",
                      default='DEBUG',

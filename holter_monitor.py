@@ -16,6 +16,9 @@ if __name__ == "__main__":
 
     if args.ui:
         pass
+    elif args.convert != "":
+        data = ir.read_data(args.data, args.path)
+        ir.save_binary(data, args.data, args.convert, args.path)
     else:
         data = ir.read_data(args.data, args.path)
         # import matplotlib.pyplot as plt

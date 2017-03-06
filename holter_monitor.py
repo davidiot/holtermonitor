@@ -24,12 +24,13 @@ if __name__ == "__main__":
         # import matplotlib.pyplot as plt
         # plt.plot(data)
         # plt.show()
-        # import numpy as np
-        # wp.render_pvc_plot(data, np.array(
-        #     [[13500, 55],
-        #      [19250, 42],
-        #      [25300, 73],
-        #      [143300, 64],
-        #      [149500, 36],
-        #      [155500, 81]]))
-        wp.render_full_plot(data)
+        import numpy as np
+        pvcs = np.array(
+            [[13495, 55],
+             [19406, 42],
+             [25305, 73],
+             [143498, 64],
+             [149402, 36],
+             [155301, 81]])
+        # wp.render_pvc_plot(data, pvcs)
+        wp.render_full_plot(data, pvcs)

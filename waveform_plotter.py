@@ -4,6 +4,8 @@ import mpld3
 import numpy as np
 import bisect as bis
 import bokeh.plotting as bp
+import bokeh.models as bm
+from bokeh.palettes import Reds8 as r8
 from mpld3 import plugins, utils
 
 
@@ -210,17 +212,63 @@ def render_pvc_plot(data, pvcs, window=3, html_filename="pvcs.html"):
     mpld3.show()
 
 
-def render_full_plot(data, html_filename="fullplot.html"):
+def render_full_plot(data, pvcs, html_filename="fullplot.html"):
     ecg = data[:, 1]
     time = data[:, 0]
 
-    bp.output_file(html_filename, mode="inline")
+    tools = "crosshair,reset,save,box_zoom,box_select"
 
     fig = bp.figure(title="Holter Monitor Data Visualizer",
+                    tools=tools,
                     x_axis_label="time",
                     y_axis_label="mV")
 
-    fig.line(time, ecg)
+    line_source = bm.ColumnDataSource(
+        data=dict(
+            time=time,
+            ecg=ecg
+        )
+    )
+
+    fig.line('time', 'ecg', source=line_source)
+
+    pvc_indices = pvcs[:, 0]
+    pvc_certainties = pvcs[:, 1]
+    point_source = bm.ColumnDataSource(
+        data=dict(
+            time=[time[i] for i in pvc_indices],
+            ecg=[ecg[i] for i in pvc_indices],
+            certainty=pvc_certainties,
+        )
+    )
+
+    r8.reverse()
+    mapper = bm.LinearColorMapper(
+        palette=r8,
+        low=0,
+        high=100
+    )
+
+    pvc_indicators = fig.circle(
+        'time', 'ecg',
+        source=point_source,
+        size=15,
+        fill_color={'field': 'certainty', 'transform': mapper},
+        line_color=None,
+        alpha=0.7
+    )
+
+    fig.add_tools(
+        bm.HoverTool(
+            renderers=[pvc_indicators],
+            tooltips=[
+                ("PVC detected at", "(@{time}s"),
+                ("certainty", "@{certainty}%"),
+            ]
+        )
+    )
+
+    bp.output_file(html_filename, mode="inline")
     bp.show(fig)
 
 

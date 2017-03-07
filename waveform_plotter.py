@@ -5,6 +5,9 @@ import numpy as np
 import bisect as bis
 import bokeh.plotting as bp
 import bokeh.models as bm
+import bokeh.models.widgets as bmw
+import bokeh.layouts as bl
+import bokeh.io as bio
 from bokeh.palettes import Reds8 as r8
 from mpld3 import plugins, utils
 
@@ -232,8 +235,13 @@ def render_full_plot(data, pvcs, html_filename="fullplot.html"):
 
     fig.line('time', 'ecg', source=line_source)
 
-    pvc_indices = pvcs[:, 0]
-    pvc_certainties = pvcs[:, 1]
+    try:
+        pvc_indices = pvcs[:, 0]
+        pvc_certainties = pvcs[:, 1]
+    except IndexError:
+        pvc_indices = []
+        pvc_certainties = []
+
     point_source = bm.ColumnDataSource(
         data=dict(
             time=[time[i] for i in pvc_indices],
@@ -262,14 +270,44 @@ def render_full_plot(data, pvcs, html_filename="fullplot.html"):
         bm.HoverTool(
             renderers=[pvc_indicators],
             tooltips=[
-                ("PVC detected at", "(@{time}s"),
+                ("PVC detected at", "@{time}s"),
                 ("certainty", "@{certainty}%"),
             ]
         )
     )
+    pvc_strings = format_pvcs(pvcs)
 
-    bp.output_file(html_filename, mode="inline")
-    bp.show(fig)
+    if len(pvc_strings) > 0:
+        select = bmw.Select(
+            title="Detected " + str(len(pvcs)) + " PVCs:",
+            value=pvc_strings[0],
+            options=pvc_strings
+        )
+    else:
+        select = bmw.Div(
+            text="""
+            <b>No PVCs detected</b>
+            """
+        )
+    title = "Holter Monitor Data Visualizer"
+    # bp.output_file(html_filename, title=title, mode="inline")
+    # bp.show(fig)
+
+    inputs = bl.widgetbox(select)
+    bio.curdoc().add_root(bl.row(inputs, fig))
+    bio.curdoc().title = title
+
+
+def format_pvcs(pvcs):
+    """ formats pvcs into a list of readable strings
+
+    :param pvcs: list of pvc indices and certainties from peak detection
+    :return: list of pvc strings
+    """
+    return [
+        str(round(pvc[1])) + "% @ " + display_time(pvc[0])
+        for pvc in pvcs
+    ]
 
 
 def display_time(time):

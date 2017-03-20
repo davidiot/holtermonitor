@@ -10,6 +10,136 @@ import bokeh.layouts as bl
 import bokeh.io as bio
 from bokeh.palettes import Reds8 as r8
 from mpld3 import plugins, utils
+import logging
+log = logging.getLogger("hm_logger")
+
+
+def render_full_plot(data, pvcs,
+                     min = 0,
+                     max = 2,
+                     window=3,
+                     html_filename="fullplot.html"):
+    ecg = data[:, 1]
+    time = data[:, 0]
+    window_range = bis.bisect_left(time, window)
+
+    tools = "crosshair,reset,save,xbox_zoom,xbox_select,xpan"
+
+    fig = bp.figure(title="Holter Monitor Data Visualizer",
+                    tools=tools,
+                    x_axis_label="time (s)",
+                    y_axis_label="ECG Signal (mV)",
+                    y_range=(min, max))
+
+    line_source = bm.ColumnDataSource(
+        data=dict(
+            time=time,
+            ecg=ecg
+        )
+    )
+
+    fig.line('time', 'ecg', source=line_source)
+
+    try:
+        pvc_indices = pvcs[:, 0]
+        pvc_certainties = pvcs[:, 1]
+    except IndexError:
+        pvc_indices = []
+        pvc_certainties = []
+
+    point_source = bm.ColumnDataSource(
+        data=dict(
+            time=[time[i] for i in pvc_indices],
+            ecg=[ecg[i] for i in pvc_indices],
+            certainty=pvc_certainties,
+        )
+    )
+
+    r8.reverse()
+    mapper = bm.LinearColorMapper(
+        palette=r8,
+        low=0,
+        high=100
+    )
+
+    pvc_indicators = fig.circle(
+        'time', 'ecg',
+        source=point_source,
+        size=15,
+        fill_color={'field': 'certainty', 'transform': mapper},
+        line_color=None,
+        alpha=0.7
+    )
+
+    fig.add_tools(
+        bm.HoverTool(
+            renderers=[pvc_indicators],
+            tooltips=[
+                ("PVC detected at", "@{time}s"),
+                ("certainty", "@{certainty}%"),
+            ]
+        )
+    )
+    pvc_strings = format_pvcs(pvcs)
+
+    if len(pvc_strings) > 0:
+        pvc_select = bmw.Select(
+            title="Detected " + str(len(pvcs)) + " PVCs:",
+            value=None,
+            options=pvc_strings
+        )
+
+        def update_pvc(attr, old, new):
+            index = pvcs[:, 0][pvc_strings.index(new)]
+            left, right = find_range(index, window_range, len(ecg))
+            fig.x_range.start = time[left]
+            fig.x_range.end = time[right]
+
+        update_pvc(0, 0, pvc_strings[0])  # set initial display
+        pvc_select.on_change("value", update_pvc)
+    else:
+        pvc_select = bmw.Div(
+            text="""
+            <b>No PVCs detected</b>
+            """
+        )
+    title = "Holter Monitor Data Visualizer"
+    # bp.output_file(html_filename, title=title, mode="inline")
+    # bp.show(fig)
+
+    inputs = bl.widgetbox(pvc_select)
+    bio.curdoc().add_root(bl.row(inputs, fig))
+    bio.curdoc().title = title
+    log.debug("Successfully rendered full plot")
+
+
+def format_pvcs(pvcs):
+    """ formats pvcs into a list of readable strings
+
+    :param pvcs: list of pvc indices and certainties from peak detection
+    :return: list of pvc strings
+    """
+    return [
+        str(round(pvc[1])) + "% @ " + display_time(pvc[0])
+        for pvc in pvcs
+    ]
+
+
+def display_time(time):
+    """ converts a time given in seconds to a readable formatted string
+
+    :param time: time in seconds
+    :return: time string
+    """
+
+    if time < 60:
+        return str(int(round(time))) + "s"
+    elif time < 3600:
+        return str(int(time / 60)) + "m " + \
+               str(int(round(time % 60))) + "s"
+    else:
+        return str(int(time / 3600)) + "h " + \
+               str(int(round((time % 3600) / 60))) + "m"
 
 
 class LinkedView(plugins.PluginBase):
@@ -129,6 +259,25 @@ class LinkedView(plugins.PluginBase):
                       "large_size": 3}
 
 
+def find_range(index, window, max):
+    """ find the left and right endpoints of a window in an array
+
+    :param index: index window is to be centered at
+    :param window: the length of the window
+    :param max: the size of the array
+    :return: left and right endpoints of the window
+    """
+    half_window = int(window / 2)
+
+    return (
+        (index - half_window, index + half_window)  # in range
+        if max - half_window >= index >= half_window else
+        (max - window, max)  # too far on right
+        if max - half_window < index else
+        (0, window)  # to far on left
+    )
+
+
 def render_pvc_plot(data, pvcs, window=3, html_filename="pvcs.html"):
     """ renders an interactive plot in a browser for viewing PVCs over 24 hrs
 
@@ -182,17 +331,12 @@ def render_pvc_plot(data, pvcs, window=3, html_filename="pvcs.html"):
 
     # create the line and data objects
     x = np.take(time, range(0, window_range))
-    half_window = int(window_range / 2)
     waveform_data = \
         np.array(
             [[x,
               np.take(
                   ecg,
-                  range(index - half_window, index + half_window)  # in range
-                  if len(ecg) - half_window >= index >= half_window else
-                  (range(len(ecg) - window_range, len(ecg))  # too far on right
-                   if len(ecg) - half_window < index else
-                   range(0, window_range))  # too far on left
+                  range(*find_range(index, window_range, len(ecg)))
               )]
              for index in pvc_indices])
     lines = ax[0].plot(x, 0 * x, '-w', lw=3, alpha=0.7)
@@ -213,115 +357,4 @@ def render_pvc_plot(data, pvcs, window=3, html_filename="pvcs.html"):
 
     mpld3.save_html(fig, html_filename)
     mpld3.show()
-
-
-def render_full_plot(data, pvcs, html_filename="fullplot.html"):
-    ecg = data[:, 1]
-    time = data[:, 0]
-
-    tools = "crosshair,reset,save,box_zoom,box_select"
-
-    fig = bp.figure(title="Holter Monitor Data Visualizer",
-                    tools=tools,
-                    x_axis_label="time",
-                    y_axis_label="mV")
-
-    line_source = bm.ColumnDataSource(
-        data=dict(
-            time=time,
-            ecg=ecg
-        )
-    )
-
-    fig.line('time', 'ecg', source=line_source)
-
-    try:
-        pvc_indices = pvcs[:, 0]
-        pvc_certainties = pvcs[:, 1]
-    except IndexError:
-        pvc_indices = []
-        pvc_certainties = []
-
-    point_source = bm.ColumnDataSource(
-        data=dict(
-            time=[time[i] for i in pvc_indices],
-            ecg=[ecg[i] for i in pvc_indices],
-            certainty=pvc_certainties,
-        )
-    )
-
-    r8.reverse()
-    mapper = bm.LinearColorMapper(
-        palette=r8,
-        low=0,
-        high=100
-    )
-
-    pvc_indicators = fig.circle(
-        'time', 'ecg',
-        source=point_source,
-        size=15,
-        fill_color={'field': 'certainty', 'transform': mapper},
-        line_color=None,
-        alpha=0.7
-    )
-
-    fig.add_tools(
-        bm.HoverTool(
-            renderers=[pvc_indicators],
-            tooltips=[
-                ("PVC detected at", "@{time}s"),
-                ("certainty", "@{certainty}%"),
-            ]
-        )
-    )
-    pvc_strings = format_pvcs(pvcs)
-
-    if len(pvc_strings) > 0:
-        select = bmw.Select(
-            title="Detected " + str(len(pvcs)) + " PVCs:",
-            value=pvc_strings[0],
-            options=pvc_strings
-        )
-    else:
-        select = bmw.Div(
-            text="""
-            <b>No PVCs detected</b>
-            """
-        )
-    title = "Holter Monitor Data Visualizer"
-    # bp.output_file(html_filename, title=title, mode="inline")
-    # bp.show(fig)
-
-    inputs = bl.widgetbox(select)
-    bio.curdoc().add_root(bl.row(inputs, fig))
-    bio.curdoc().title = title
-
-
-def format_pvcs(pvcs):
-    """ formats pvcs into a list of readable strings
-
-    :param pvcs: list of pvc indices and certainties from peak detection
-    :return: list of pvc strings
-    """
-    return [
-        str(round(pvc[1])) + "% @ " + display_time(pvc[0])
-        for pvc in pvcs
-    ]
-
-
-def display_time(time):
-    """ converts a time given in seconds to a readable formatted string
-
-    :param time: time in seconds
-    :return: time string
-    """
-
-    if time < 60:
-        return str(int(round(time))) + "s"
-    elif time < 3600:
-        return str(int(time / 60)) + "m " + \
-               str(int(round(time % 60))) + "s"
-    else:
-        return str(int(time / 3600)) + "h " + \
-               str(int(round((time % 3600) / 60))) + "m"
+    log.debug("Successfully rendered PVC plot")

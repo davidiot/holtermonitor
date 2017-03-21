@@ -82,33 +82,62 @@ def render_full_plot(data, pvcs,
     )
     pvc_strings = format_pvcs(pvcs)
 
+    window_slider = bmw.Slider(
+        title="Window (seconds)",
+        value=window,
+        start=1,
+        end=10,
+        step=1
+    )
+
+    def update_pvc(left, right):
+        fig.x_range.start = left
+        fig.x_range.end = right
+
     if len(pvc_strings) > 0:
         pvc_select = bmw.Select(
             title="Detected " + str(len(pvcs)) + " PVCs:",
-            value=None,
+            value=pvc_strings[0],
             options=pvc_strings
         )
 
-        def update_pvc(attr, old, new):
-            index = pvcs[:, 0][pvc_strings.index(new)]
-            left, right = find_range(index, window_range, len(ecg))
-            fig.x_range.start = time[left]
-            fig.x_range.end = time[right]
+        def update_select(attr, old, new):
+            index = pvcs[:, 0][pvc_strings.index(pvc_select.value)]
+            w_range = bis.bisect_left(time, window_slider.value)
+            left, right = find_range(index, w_range, len(ecg))
+            update_pvc(time[left], time[right])
 
-        update_pvc(0, 0, pvc_strings[0])  # set initial display
-        pvc_select.on_change("value", update_pvc)
+        update_select(0, 0, 0)  # set initial display
+        pvc_select.on_change("value", update_select)
     else:
         pvc_select = bmw.Div(
             text="""
             <b>No PVCs detected</b>
             """
         )
+
+    def update_window(attr, old, new):
+        change = new - old
+        left = fig.x_range.start - change / 2
+        right = fig.x_range.end + change / 2
+        update_pvc(left, right)
+
+    window_slider.on_change("value", update_window)
+
     title = "Holter Monitor Data Visualizer"
     # bp.output_file(html_filename, title=title, mode="inline")
     # bp.show(fig)
 
     inputs = bl.widgetbox(pvc_select)
-    bio.curdoc().add_root(bl.row(inputs, fig))
+    bio.curdoc().add_root(
+        bl.row(
+            bl.column(
+                inputs,
+                window_slider
+            ),
+            fig
+        )
+    )
     bio.curdoc().title = title
     log.debug("Successfully rendered full plot")
 

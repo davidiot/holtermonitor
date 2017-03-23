@@ -1,9 +1,27 @@
 import holter_monitor_errors as hme
 import numpy as np
 import lvm_read as lr
+import nptdms as npt
 import os.path
 import logging
 log = logging.getLogger("hm_logger")
+
+
+def read_tdms(filename="ecg.tdms", folder="data/"):
+    """ reads ecg data from an LabView TDMS (.tdms) file
+
+    :param filename: name of tdms file
+    :param folder: folder where data files are kept
+    :return: ecg data array
+    """
+    extension = os.path.splitext(filename)[1]
+    if extension != ".tdms":
+        message = filename + " was not a TDMS file"
+        log.error(message)
+        raise hme.InvalidFormatError(message)
+
+    file = npt.TdmsFile(file_path(folder, filename))
+    return file
 
 
 def read_lvm(filename="ecg.lvm", folder="data/"):
@@ -61,6 +79,8 @@ def read_data(data_filename="ecg.lvm",
         ecg = read_lvm(data_filename, folder)
     elif extension == ".npy":
         ecg = read_bin(data_filename, folder)
+    elif extension == ".tdms":
+        ecg = read_tdms(data_filename, folder)
     else:
         message = extension + " files are not supported yet"
         log.error(message)

@@ -13,3 +13,6 @@ data/*.pkl
 
 ## ignore super long data file made by script
 data/longdata.lvm
+
+## ignore all tdms files
+*.tdms

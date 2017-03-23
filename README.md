@@ -9,6 +9,10 @@ BME 464L: Medical Instrument Design
 
 + put electrodes on your body and become a cyborg.
 
++ to run the server on a configured Duke VM: ```bokeh serve holter_monitor.py --port 5100 --host 152.3.52.29:80```
+
++ to kill the server: ```fuser -k 5100/tcp```
+
 ## Known Issues:
 
 + none yet!

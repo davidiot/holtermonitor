@@ -23,7 +23,7 @@ def render_full_plot(data, pvcs,
     time = data[:, 0]
     window_range = bis.bisect_left(time, window)
 
-    tools = "crosshair,reset,save,xbox_zoom,xbox_select,xpan"
+    tools = "crosshair,save,xbox_zoom,xbox_select,xpan"
 
     fig = bp.figure(title="Holter Monitor Data Visualizer",
                     tools=tools,
@@ -80,7 +80,7 @@ def render_full_plot(data, pvcs,
             ]
         )
     )
-    pvc_strings = format_pvcs(pvcs)
+    pvc_strings = format_pvcs(pvcs, time)
 
     window_slider = bmw.Slider(
         title="Window (seconds)",
@@ -142,14 +142,15 @@ def render_full_plot(data, pvcs,
     log.debug("Successfully rendered full plot")
 
 
-def format_pvcs(pvcs):
+def format_pvcs(pvcs, time):
     """ formats pvcs into a list of readable strings
 
     :param pvcs: list of pvc indices and certainties from peak detection
+    :param time: array of time values
     :return: list of pvc strings
     """
     return [
-        str(round(pvc[1])) + "% @ " + display_time(pvc[0])
+        str(round(pvc[1])) + "% @ " + display_time(time[pvc[0]])
         for pvc in pvcs
     ]
 

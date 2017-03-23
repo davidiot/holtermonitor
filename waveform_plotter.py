@@ -117,7 +117,7 @@ def render_full_plot(data, pvcs,
         )
 
     def update_window(attr, old, new):
-        change = new - old
+        change = window_slider.value - (fig.x_range.end - fig.x_range.start)
         left = fig.x_range.start - change / 2
         right = fig.x_range.end + change / 2
         update_pvc(left, right)

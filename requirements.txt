@@ -5,3 +5,5 @@ numpy==1.11.1
 python-dateutil==2.5.3
 matplotlib==1.5.3
 mpld3==0.3
+Jinja2==2.9.5
+bokeh==0.12.4

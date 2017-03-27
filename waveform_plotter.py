@@ -14,13 +14,12 @@ import logging
 log = logging.getLogger("hm_logger")
 
 
-def render_full_plot(data, pvcs,
+def render_full_plot(time, ecg, pvcs,
                      min = 0,
                      max = 2,
                      window=3,
                      html_filename="fullplot.html"):
-    ecg = data[:, 1]
-    time = data[:, 0]
+
     window_range = bis.bisect_left(time, window)
 
     tools = "crosshair,save,xbox_zoom,xbox_select,xpan"
@@ -308,18 +307,17 @@ def find_range(index, window, max):
     )
 
 
-def render_pvc_plot(data, pvcs, window=3, html_filename="pvcs.html"):
+def render_pvc_plot(time, ecg, pvcs, window=3, html_filename="pvcs.html"):
     """ renders an interactive plot in a browser for viewing PVCs over 24 hrs
 
-    :param data: ecg data read in from an LVM or binary file
+    :param time: time data array corresponding to the ecg data array
+    :param ecg: ecg data read in from an LVM or binary file
     :param pvcs: an array that stores the indices of the detected PVCs
     :param window: the number of seconds of EKG to display in the top window
     :param html_filename: the name of the html file where the output is saved
     :return:
     """
 
-    ecg = data[:, 1]
-    time = data[:, 0]
     time_range = time[len(time) - 1]
     fig, ax = plt.subplots(2)
     window_range = bis.bisect_left(time, window)

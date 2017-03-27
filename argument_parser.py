@@ -33,8 +33,8 @@ def parse_arguments():
 
     par.add_argument("--data",
                      dest="data",
-                     help="LabView data filename",
-                     default="pvcs.lvm")
+                     help="ECG data filename",
+                     default="ecg.tdms")
 
     par.add_argument("--path",
                      dest="path",

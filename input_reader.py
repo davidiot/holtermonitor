@@ -7,12 +7,18 @@ import logging
 log = logging.getLogger("hm_logger")
 
 
-def read_tdms(filename="ecg.tdms", folder="data/"):
+def read_tdms(filename="ecg.tdms", folder="data/",
+              sample_rate=390,
+              group_name="GroupName",
+              channel_name="ChName"):
     """ reads ecg data from an LabView TDMS (.tdms) file
 
     :param filename: name of tdms file
     :param folder: folder where data files are kept
-    :return: ecg data array
+    :param sample_rate: sampling rate of the tdms file
+    :param group_name: group name of the channel to read from in the TDMS file
+    :param group_name: name of the channel to read from in the group
+    :return: time data array, ecg data array
     """
     extension = os.path.splitext(filename)[1]
     if extension != ".tdms":
@@ -21,7 +27,11 @@ def read_tdms(filename="ecg.tdms", folder="data/"):
         raise hme.InvalidFormatError(message)
 
     file = npt.TdmsFile(file_path(folder, filename))
-    return file
+    ecg = file.object(group_name, channel_name).data
+    num_samples = len(ecg)
+    num_seconds = num_samples / sample_rate
+    time = np.linspace(0, num_seconds, num_samples)
+    return time, ecg
 
 
 def read_lvm(filename="ecg.lvm", folder="data/"):
@@ -29,7 +39,7 @@ def read_lvm(filename="ecg.lvm", folder="data/"):
 
     :param filename: name of lvm file
     :param folder: folder where data files are kept
-    :return: ecg data array
+    :return: time data array, ecg data array
     """
 
     extension = os.path.splitext(filename)[1]
@@ -44,7 +54,10 @@ def read_lvm(filename="ecg.lvm", folder="data/"):
         log.error(message)
         raise hme.InvalidFormatError(message)
 
-    return data[0]['data']
+    arr = data[0]['data']
+    ecg = arr[:, 1]
+    time = arr[:, 0]
+    return time, ecg
 
 
 def read_bin(filename="ecg.npy", folder="data/"):
@@ -52,7 +65,7 @@ def read_bin(filename="ecg.npy", folder="data/"):
 
     :param filename: name of binary file
     :param folder: folder where data files are kept
-    :return: ecg data array
+    :return: time data array, ecg data array
     """
 
     extension = os.path.splitext(filename)[1]
@@ -61,8 +74,9 @@ def read_bin(filename="ecg.npy", folder="data/"):
         log.error(message)
         raise hme.InvalidFormatError(message)
     data = np.load(file_path(folder, filename))
-
-    return data
+    time = data[:, 0]
+    ecg = data[:, 1]
+    return time, ecg
 
 
 def read_data(data_filename="ecg.lvm",
@@ -71,16 +85,16 @@ def read_data(data_filename="ecg.lvm",
 
     :param data_filename: name of npy or lvm file
     :param folder: folder where data files are kept
-    :return: ecg data array
+    :return: time data array, ecg data array
     """
 
     extension = os.path.splitext(data_filename)[1]
     if extension == ".lvm":
-        ecg = read_lvm(data_filename, folder)
+        time, ecg = read_lvm(data_filename, folder)
     elif extension == ".npy":
-        ecg = read_bin(data_filename, folder)
+        time, ecg = read_bin(data_filename, folder)
     elif extension == ".tdms":
-        ecg = read_tdms(data_filename, folder)
+        time, ecg = read_tdms(data_filename, folder)
     else:
         message = extension + " files are not supported yet"
         log.error(message)
@@ -89,7 +103,7 @@ def read_data(data_filename="ecg.lvm",
     log.debug("successfully read and constructed ecg data from " +
               data_filename)
 
-    return ecg.astype("float32")
+    return time.astype("float32"), ecg.astype("float32")
 
 
 def file_path(folder, filename):

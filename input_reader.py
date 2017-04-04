@@ -1,4 +1,5 @@
 import holter_monitor_errors as hme
+import holter_monitor_constants as hmc
 import numpy as np
 import lvm_read as lr
 import nptdms as npt
@@ -8,7 +9,7 @@ log = logging.getLogger("hm_logger")
 
 
 def read_tdms(filename="ecg.tdms", folder="data/",
-              sample_rate=390,
+              sample_rate=hmc.SAMPLE_RATE,
               group_name="GroupName",
               channel_name="ChName"):
     """ reads ecg data from an LabView TDMS (.tdms) file
@@ -17,7 +18,7 @@ def read_tdms(filename="ecg.tdms", folder="data/",
     :param folder: folder where data files are kept
     :param sample_rate: sampling rate of the tdms file
     :param group_name: group name of the channel to read from in the TDMS file
-    :param group_name: name of the channel to read from in the group
+    :param channel_name: name of the channel to read from in the group
     :return: time data array, ecg data array
     """
     extension = os.path.splitext(filename)[1]

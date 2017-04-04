@@ -10,17 +10,19 @@ import bokeh.layouts as bl
 import bokeh.io as bio
 from bokeh.palettes import Reds8 as r8
 from mpld3 import plugins, utils
+import database_manager as dm
+import holter_monitor_constants as hmc
 import logging
 log = logging.getLogger("hm_logger")
 
 
-def render_full_plot(time, ecg, pvcs,
-                     min = 0,
-                     max = 2,
+def render_full_plot(pvcs,
+                     min=-0.7,
+                     max=0.7,
                      window=3,
                      html_filename="fullplot.html"):
 
-    window_range = bis.bisect_left(time, window)
+    window_range = hmc.SAMPLE_RATE * window
 
     tools = "crosshair,save,xbox_zoom,xbox_select,xpan"
 
@@ -32,8 +34,8 @@ def render_full_plot(time, ecg, pvcs,
 
     line_source = bm.ColumnDataSource(
         data=dict(
-            time=time,
-            ecg=ecg
+            time=[],
+            ecg=[]
         )
     )
 
@@ -46,10 +48,14 @@ def render_full_plot(time, ecg, pvcs,
         pvc_indices = []
         pvc_certainties = []
 
+    [pvc_times, pvc_ecgs] = [list(t) for t in [
+        dm.query_point(i) for i in pvc_indices
+    ]]
+
     point_source = bm.ColumnDataSource(
         data=dict(
-            time=[time[i] for i in pvc_indices],
-            ecg=[ecg[i] for i in pvc_indices],
+            time=pvc_times,
+            ecg=pvc_ecgs,
             certainty=pvc_certainties,
         )
     )
@@ -79,7 +85,7 @@ def render_full_plot(time, ecg, pvcs,
             ]
         )
     )
-    pvc_strings = format_pvcs(pvcs, time)
+    pvc_strings = format_pvcs(pvcs)
 
     window_slider = bmw.Slider(
         title="Window (seconds)",
@@ -141,15 +147,17 @@ def render_full_plot(time, ecg, pvcs,
     log.debug("Successfully rendered full plot")
 
 
-def format_pvcs(pvcs, time):
+def format_pvcs(pvcs):
     """ formats pvcs into a list of readable strings
 
     :param pvcs: list of pvc indices and certainties from peak detection
-    :param time: array of time values
     :return: list of pvc strings
     """
     return [
-        str(round(pvc[1])) + "% @ " + display_time(time[pvc[0]])
+        str(round(pvc[1])) + "% @ "
+        + display_time(
+            dm.query_point(pvc[0])
+        )
         for pvc in pvcs
     ]
 

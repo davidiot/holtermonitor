@@ -2,6 +2,7 @@ import logging
 import argument_parser as ap
 import input_reader as ir
 import waveform_plotter as wp
+import database_manager as dm
 
 args = ap.parse_arguments()
 
@@ -13,12 +14,10 @@ logging.basicConfig(
 
 log = logging.getLogger("hm_logger")
 
-log.debug(args)
-
-if args.ui:
-    pass
-else:
+if args.upload:
     time, ecg = ir.read_data(args.data, args.path)
+    dm.upload(time, ecg)
+else:
     # import matplotlib.pyplot as plt
     # plt.plot(data)
     # plt.show()
@@ -30,5 +29,6 @@ else:
          [143498, 64],
          [149402, 36],
          [155301, 81]])
+    # time, ecg = ir.read_data(args.data, args.path)
     # wp.render_pvc_plot(time, ecg, pvcs)
-    wp.render_full_plot(time, ecg, pvcs)
+    wp.render_full_plot(pvcs)

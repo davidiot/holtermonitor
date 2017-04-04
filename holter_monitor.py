@@ -15,7 +15,7 @@ logging.basicConfig(
 log = logging.getLogger("hm_logger")
 
 if args.upload:
-    time, ecg = ir.read_data(args.data, args.path)
+    time, ecg = ir.read_data(args.upload, args.path)
     dm.upload(time, ecg)
 else:
     # import matplotlib.pyplot as plt

@@ -31,10 +31,10 @@ def parse_arguments():
                                         "contractions.",
                             formatter_class=ap.ArgumentDefaultsHelpFormatter)
 
-    par.add_argument("--data",
-                     dest="data",
-                     help="ECG data filename",
-                     default="ecg.tdms")
+    par.add_argument("--upload",
+                     dest="upload",
+                     help="uploads specified file into database",
+                     default=None)
 
     par.add_argument("--path",
                      dest="path",
@@ -53,12 +53,5 @@ def parse_arguments():
                      nargs='?',
                      help='Sets the logging level. Choose from {0}'
                           .format(log_levels))
-
-    par.add_argument("--upload",
-                     dest="upload",
-                     action="store_true",
-                     help="uploads data stored in file into a new database file"
-                          "(invoke to turn on)")
-    par.set_defaults(upload=True)
 
     return par.parse_args()

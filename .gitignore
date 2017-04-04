@@ -16,3 +16,6 @@ data/longdata.lvm
 
 ## ignore all tdms files
 *.tdms
+
+## ignore databases
+*.db

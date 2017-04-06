@@ -50,6 +50,6 @@ def query_point(point):
               SELECT TIME, ECG FROM ecg_data
               WHERE IND = ?
               ORDER BY TIME
-              """, [point]).fetchone()
+              """, [int(point)]).fetchone()
     c.close()
     return result

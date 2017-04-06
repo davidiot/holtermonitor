@@ -17,12 +17,11 @@ log = logging.getLogger("hm_logger")
 
 
 def render_full_plot(pvcs,
-                     min=-0.7,
-                     max=0.7,
-                     window=3,
-                     html_filename="fullplot.html"):
+                     min=0,
+                     max=2,
+                     window=3):
 
-    window_range = hmc.SAMPLE_RATE * window
+    data_length = dm.query_length()
 
     tools = "crosshair,save,xbox_zoom,xbox_select,xpan"
 
@@ -48,14 +47,14 @@ def render_full_plot(pvcs,
         pvc_indices = []
         pvc_certainties = []
 
-    [pvc_times, pvc_ecgs] = [list(t) for t in [
-        dm.query_point(i) for i in pvc_indices
-    ]]
+    pvc_data = np.array(
+        [list(t) for t in [dm.query_point(i) for i in pvc_indices]]
+    )
 
     point_source = bm.ColumnDataSource(
         data=dict(
-            time=pvc_times,
-            ecg=pvc_ecgs,
+            time=pvc_data[:, 0],
+            ecg=pvc_data[:, 1],
             certainty=pvc_certainties,
         )
     )
@@ -85,6 +84,7 @@ def render_full_plot(pvcs,
             ]
         )
     )
+
     pvc_strings = format_pvcs(pvcs)
 
     window_slider = bmw.Slider(
@@ -96,8 +96,18 @@ def render_full_plot(pvcs,
     )
 
     def update_pvc(left, right):
-        fig.x_range.start = left
-        fig.x_range.end = right
+        left_time = dm.query_point(left)[0]
+        right_time = dm.query_point(right)[0]
+        update_range(left_time, right_time)
+
+    def update_range(left_time, right_time):
+        time, ecg = dm.query_data(left_time, right_time)
+        line_source.data = dict(
+            time=time,
+            ecg=ecg
+        )
+        fig.x_range.start = left_time
+        fig.x_range.end = right_time
 
     if len(pvc_strings) > 0:
         pvc_select = bmw.Select(
@@ -107,10 +117,10 @@ def render_full_plot(pvcs,
         )
 
         def update_select(attr, old, new):
-            index = pvcs[:, 0][pvc_strings.index(pvc_select.value)]
-            w_range = bis.bisect_left(time, window_slider.value)
-            left, right = find_range(index, w_range, len(ecg))
-            update_pvc(time[left], time[right])
+            index = pvc_indices[pvc_strings.index(pvc_select.value)]
+            w_range = hmc.SAMPLE_RATE * window_slider.value
+            left, right = find_range(index, w_range, data_length)
+            update_pvc(left, right)
 
         update_select(0, 0, 0)  # set initial display
         pvc_select.on_change("value", update_select)
@@ -122,10 +132,10 @@ def render_full_plot(pvcs,
         )
 
     def update_window(attr, old, new):
-        change = window_slider.value - (fig.x_range.end - fig.x_range.start)
-        left = fig.x_range.start - change / 2
-        right = fig.x_range.end + change / 2
-        update_pvc(left, right)
+        center = (fig.x_range.start + fig.x_range.end) / 2
+        left_time = center - window_slider.value / 2
+        right_time = center + window_slider.value / 2
+        update_range(left_time, right_time)
 
     window_slider.on_change("value", update_window)
 
@@ -156,7 +166,7 @@ def format_pvcs(pvcs):
     return [
         str(round(pvc[1])) + "% @ "
         + display_time(
-            dm.query_point(pvc[0])
+            dm.query_point(pvc[0])[0]
         )
         for pvc in pvcs
     ]

@@ -19,7 +19,7 @@ log = logging.getLogger("hm_logger")
 def render_full_plot(pvcs,
                      min=0,
                      max=2,
-                     window=3):
+                     query_window=60):
 
     data_length = dm.query_length()
 
@@ -89,23 +89,13 @@ def render_full_plot(pvcs,
 
     window_slider = bmw.Slider(
         title="Window (seconds)",
-        value=window,
+        value=3,
         start=1,
         end=10,
         step=1
     )
 
-    def update_pvc(left, right):
-        left_time = dm.query_point(left)[0]
-        right_time = dm.query_point(right)[0]
-        update_range(left_time, right_time)
-
     def update_range(left_time, right_time):
-        time, ecg = dm.query_data(left_time, right_time)
-        line_source.data = dict(
-            time=time,
-            ecg=ecg
-        )
         fig.x_range.start = left_time
         fig.x_range.end = right_time
 
@@ -120,7 +110,15 @@ def render_full_plot(pvcs,
             index = pvc_indices[pvc_strings.index(pvc_select.value)]
             w_range = hmc.SAMPLE_RATE * window_slider.value
             left, right = find_range(index, w_range, data_length)
-            update_pvc(left, right)
+            left_time = dm.query_point(left)[0]
+            right_time = dm.query_point(right)[0]
+            center = (left_time + right_time) / 2
+            time, ecg = dm.query_data(center - query_window / 2, center + query_window / 2)
+            line_source.data = dict(
+                time=time,
+                ecg=ecg
+            )
+            update_range(left_time, right_time)
 
         update_select(0, 0, 0)  # set initial display
         pvc_select.on_change("value", update_select)

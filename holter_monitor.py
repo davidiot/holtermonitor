@@ -16,26 +16,15 @@ logging.basicConfig(
 
 log = logging.getLogger("hm_logger")
 
-# pvcs = pvc_detect.process_data(1000, 10, "multipvc.lvm")
-# print(pvcs)
-
 if args.upload:
     time, ecg = ir.read_data(args.upload, args.path)
-    dm.upload(time, ecg)
-    pvcs = pvc_detect.process_data(hmc.SAMPLE_RATE, hmc.WINDOW, ecg)
-    print(pvcs)
+    pvcs = pvc_detect.process_data(hmc.SAMPLE_RATE, args.pvc_window, ecg)
+    dm.upload(time, ecg, pvcs)
+
 else:
     # import matplotlib.pyplot as plt
     # plt.plot(data)
     # plt.show()
-    import numpy as np
-    pvcs = np.array(
-        [[13495, 55],
-         [19406, 42],
-         [25305, 73],
-         [143498, 64],
-         [149402, 36],
-         [155301, 81]])
     # time, ecg = ir.read_data(args.data, args.path)
     # wp.render_pvc_plot(time, ecg, pvcs)
-    wp.render_full_plot(pvcs)
+    wp.render_full_plot()

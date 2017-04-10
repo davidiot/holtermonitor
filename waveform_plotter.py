@@ -16,12 +16,12 @@ import logging
 log = logging.getLogger("hm_logger")
 
 
-def render_full_plot(pvcs,
-                     min=0,
+def render_full_plot(min=0,
                      max=2,
                      query_window=60):
 
     data_length = dm.query_length()
+    pvcs = np.array(dm.query_pvcs())
 
     tools = "crosshair,save,xbox_zoom,xbox_select,xpan"
 
@@ -63,7 +63,7 @@ def render_full_plot(pvcs,
     mapper = bm.LinearColorMapper(
         palette=r8,
         low=0,
-        high=100
+        high=4
     )
 
     pvc_indicators = fig.circle(
@@ -80,7 +80,7 @@ def render_full_plot(pvcs,
             renderers=[pvc_indicators],
             tooltips=[
                 ("PVC detected at", "@{time}s"),
-                ("certainty", "@{certainty}%"),
+                ("Conditions met", "@{certainty}"),
             ]
         )
     )
@@ -106,7 +106,7 @@ def render_full_plot(pvcs,
             options=pvc_strings
         )
 
-        def update_select(attr, old, new):
+        def update_select():
             index = pvc_indices[pvc_strings.index(pvc_select.value)]
             w_range = hmc.SAMPLE_RATE * window_slider.value
             left, right = find_range(index, w_range, data_length)
@@ -120,8 +120,8 @@ def render_full_plot(pvcs,
             )
             update_range(left_time, right_time)
 
-        update_select(0, 0, 0)  # set initial display
-        pvc_select.on_change("value", update_select)
+        update_select()  # set initial display
+        pvc_select.on_change("value", lambda attr, old, new: update_select())
     else:
         pvc_select = bmw.Div(
             text="""
@@ -129,13 +129,14 @@ def render_full_plot(pvcs,
             """
         )
 
-    def update_window(attr, old, new):
+    def update_window():
         center = (fig.x_range.start + fig.x_range.end) / 2
         left_time = center - window_slider.value / 2
         right_time = center + window_slider.value / 2
         update_range(left_time, right_time)
 
-    window_slider.on_change("value", update_window)
+    update_window()
+    window_slider.on_change("value", lambda attr, old, new: update_window())
 
     title = "Holter Monitor Data Visualizer"
     # bp.output_file(html_filename, title=title, mode="inline")
@@ -162,7 +163,10 @@ def format_pvcs(pvcs):
     :return: list of pvc strings
     """
     return [
-        str(round(pvc[1])) + "% @ "
+        str(round(pvc[1]))
+        + " condition"
+        + ("s" if round(pvc[1]) > 1 else "")
+        + " met @ "
         + display_time(
             dm.query_point(pvc[0])[0]
         )

@@ -1,7 +1,7 @@
 import sqlite3 as sql3
 
 
-def upload(time, ecg):
+def upload(time, ecg, pvcs):
     conn = sql3.connect('hmdata.db')
     c = conn.cursor()
 
@@ -12,10 +12,19 @@ def upload(time, ecg):
     c.execute("CREATE TABLE metadata (LENGTH INTEGER)")
     c.execute("INSERT INTO metadata (LENGTH) VALUES(?)", [len(ecg)])
 
+    c.execute("DROP TABLE IF EXISTS pvc_data")
+    c.execute("CREATE TABLE pvc_data (IND INTEGER, CERTAINTY INTEGER)")
+
     for i, (t, e) in enumerate(zip(time, ecg)):
         c.execute(
             "INSERT INTO ecg_data (IND, TIME, ECG) VALUES(?, ?, ?)",
             (i, float(t), float(e))
+        )
+
+    for (ind, certainty) in pvcs:
+        c.execute(
+            "INSERT INTO pvc_data (IND, CERTAINTY) VALUES(?, ?)",
+            (int(ind), int(certainty))
         )
 
     conn.commit()
@@ -28,6 +37,14 @@ def query_length():
     result = c.execute("SELECT LENGTH FROM metadata").fetchone()[0]
     c.close()
     return result
+
+
+def query_pvcs():
+    conn = sql3.connect('hmdata.db')
+    c = conn.cursor()
+    result = c.execute("SELECT IND, CERTAINTY FROM pvc_data").fetchall()
+    c.close()
+    return [[i, c] for (i, c) in result]
 
 
 def query_data(start, end):

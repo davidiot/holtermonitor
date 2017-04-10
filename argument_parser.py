@@ -46,6 +46,12 @@ def parse_arguments():
                      help="convert lvm file to bin file with this filename",
                      default="")
 
+    par.add_argument("--pvc_window",
+                     dest="pvc_window",
+                     help="window parameter for pvc detection",
+                     type=float,
+                     default=10)
+
     par.add_argument("--log",
                      default='DEBUG',
                      dest='log',

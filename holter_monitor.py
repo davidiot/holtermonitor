@@ -3,6 +3,7 @@ import argument_parser as ap
 import input_reader as ir
 import waveform_plotter as wp
 import database_manager as dm
+import pvc_detect_two as pvc_detect
 
 args = ap.parse_arguments()
 
@@ -13,6 +14,9 @@ logging.basicConfig(
     level=args.log)
 
 log = logging.getLogger("hm_logger")
+
+pvcs = pvc_detect.process_data(1000, 10, "multipvc.lvm")
+print(pvcs)
 
 if args.upload:
     time, ecg = ir.read_data(args.upload, args.path)

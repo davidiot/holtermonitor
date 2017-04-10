@@ -87,6 +87,13 @@ def render_full_plot(min=0,
 
     pvc_strings = format_pvcs(pvcs)
 
+    loading_mode = "<div><b>loading...</b></div>"
+    hidden_mode = "<div hidden><b>loading...</b></div>"
+
+    loading_indicator = bmw.Div(
+        text=hidden_mode
+    )
+
     window_slider = bmw.Slider(
         title="Window (seconds)",
         value=3,
@@ -107,6 +114,7 @@ def render_full_plot(min=0,
         )
 
         def update_select():
+            loading_indicator.text = loading_mode
             index = pvc_indices[pvc_strings.index(pvc_select.value)]
             w_range = hmc.SAMPLE_RATE * window_slider.value
             left, right = find_range(index, w_range, data_length)
@@ -118,6 +126,7 @@ def render_full_plot(min=0,
                 time=time,
                 ecg=ecg
             )
+            loading_indicator.text = hidden_mode
             update_range(left_time, right_time)
 
         update_select()  # set initial display
@@ -147,7 +156,8 @@ def render_full_plot(min=0,
         bl.row(
             bl.column(
                 inputs,
-                window_slider
+                window_slider,
+                loading_indicator
             ),
             fig
         )

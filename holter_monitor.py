@@ -4,6 +4,7 @@ import input_reader as ir
 import waveform_plotter as wp
 import database_manager as dm
 import pvc_detect_two as pvc_detect
+import holter_monitor_constants as hmc
 
 args = ap.parse_arguments()
 
@@ -15,12 +16,14 @@ logging.basicConfig(
 
 log = logging.getLogger("hm_logger")
 
-pvcs = pvc_detect.process_data(1000, 10, "multipvc.lvm")
-print(pvcs)
+# pvcs = pvc_detect.process_data(1000, 10, "multipvc.lvm")
+# print(pvcs)
 
 if args.upload:
     time, ecg = ir.read_data(args.upload, args.path)
     dm.upload(time, ecg)
+    pvcs = pvc_detect.process_data(hmc.SAMPLE_RATE, hmc.WINDOW, ecg)
+    print(pvcs)
 else:
     # import matplotlib.pyplot as plt
     # plt.plot(data)

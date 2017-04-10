@@ -166,15 +166,17 @@ def process_pvc(signal, distances, averages, indexes, r_peaks, prematurity, comp
     return pvc_indexes_25, pvc_indexes_50, pvc_indexes_75, pvc_indexes_100, pvc_count
 
 
-def process_data(fs, window, filename):
+def process_data(fs, window, signal):
     """ main function for detecting PVCs
 
      :param fs: sampling frequency of data
      :param window: interval for average processing (seconds)
      """
 
-    data = get_signal_data(fs, window, filename)
-    signal = data[:, 1]
+    #data = get_signal_data(fs, window, ecg)
+    #signal = data[:, 1]
+    #signal = ecg
+    #print(signal)
 
     out = ecg.ecg(signal=signal, sampling_rate=fs, show=False)
     r_peaks = out['rpeaks']

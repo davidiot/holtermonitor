@@ -8,3 +8,4 @@ mpld3==0.3
 Jinja2==2.9.5
 bokeh==0.12.4
 npTDMS==0.10.3
+biosppy==0.3.0

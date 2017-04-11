@@ -17,7 +17,7 @@ log = logging.getLogger("hm_logger")
 
 
 def render_full_plot(min=0,
-                     max=2,
+                     max=2.5,
                      query_window=60):
 
     data_length = dm.query_length()

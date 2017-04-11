@@ -106,10 +106,7 @@ def render_full_plot(min=0,
 
     def requery_data(index):
         loading_indicator.text = loading_mode
-        w_range = hmc.SAMPLE_RATE * window_slider.value
-        left, right = find_range(index, w_range, data_length)
-        left_time = dm.query_point(left)[0]
-        right_time = dm.query_point(right)[0]
+        left_time, right_time = find_time_endpoints_from_index(index)
         center = (left_time + right_time) / 2
         data_endpoints[0] = center - query_window / 2
         data_endpoints[1] = center + query_window / 2
@@ -119,6 +116,13 @@ def render_full_plot(min=0,
             ecg=ecg
         )
         loading_indicator.text = hidden_mode
+        return left_time, right_time
+
+    def find_time_endpoints_from_index(index):
+        w_range = hmc.SAMPLE_RATE * window_slider.value
+        left, right = find_range(index, w_range, data_length)
+        left_time = float(left) / hmc.SAMPLE_RATE
+        right_time = float(right) / hmc.SAMPLE_RATE
         return left_time, right_time
 
     def refresh_data():
@@ -142,7 +146,12 @@ def render_full_plot(min=0,
         )
 
         def update_select():
-            left_time, right_time = requery_data(pvc_indices[pvc_strings.index(pvc_select.value)])
+            index = pvc_indices[pvc_strings.index(pvc_select.value)]
+            left_time, right_time = requery_data(index) \
+                if not (fig.x_range.start and fig.x_range.end) \
+                   or index < data_endpoints[0] * hmc.SAMPLE_RATE \
+                   or index > data_endpoints[1] * hmc.SAMPLE_RATE \
+                else find_time_endpoints_from_index(index)
             update_range(left_time, right_time)
 
         update_select()  # set initial display

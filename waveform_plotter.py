@@ -23,7 +23,7 @@ def render_full_plot(min=0,
     data_length = dm.query_length()
     pvcs = np.array(dm.query_pvcs())
 
-    tools = "crosshair,save,xbox_zoom,xbox_select,xpan"
+    tools = "crosshair,save,xbox_zoom,xpan"
 
     fig = bp.figure(title="Holter Monitor Data Visualizer",
                     tools=tools,
@@ -102,6 +102,34 @@ def render_full_plot(min=0,
         step=1
     )
 
+    data_endpoints = [0, data_length]
+
+    def requery_data(index):
+        loading_indicator.text = loading_mode
+        w_range = hmc.SAMPLE_RATE * window_slider.value
+        left, right = find_range(index, w_range, data_length)
+        left_time = dm.query_point(left)[0]
+        right_time = dm.query_point(right)[0]
+        center = (left_time + right_time) / 2
+        data_endpoints[0] = center - query_window / 2
+        data_endpoints[1] = center + query_window / 2
+        time, ecg = dm.query_data(data_endpoints[0], data_endpoints[1])
+        line_source.data = dict(
+            time=time,
+            ecg=ecg
+        )
+        loading_indicator.text = hidden_mode
+        return left_time, right_time
+
+    def refresh_data():
+        if fig.x_range.start and fig.x_range.start < data_endpoints[0]:
+            requery_data(fig.x_range.start * hmc.SAMPLE_RATE)
+        elif fig.x_range.end and fig.x_range.end > data_endpoints[1]:
+            requery_data(fig.x_range.end * hmc.SAMPLE_RATE)
+
+    fig.x_range.on_change('start', lambda attr, old, new: refresh_data())
+    fig.x_range.on_change('end', lambda attr, old, new: refresh_data())
+
     def update_range(left_time, right_time):
         fig.x_range.start = left_time
         fig.x_range.end = right_time
@@ -114,19 +142,7 @@ def render_full_plot(min=0,
         )
 
         def update_select():
-            loading_indicator.text = loading_mode
-            index = pvc_indices[pvc_strings.index(pvc_select.value)]
-            w_range = hmc.SAMPLE_RATE * window_slider.value
-            left, right = find_range(index, w_range, data_length)
-            left_time = dm.query_point(left)[0]
-            right_time = dm.query_point(right)[0]
-            center = (left_time + right_time) / 2
-            time, ecg = dm.query_data(center - query_window / 2, center + query_window / 2)
-            line_source.data = dict(
-                time=time,
-                ecg=ecg
-            )
-            loading_indicator.text = hidden_mode
+            left_time, right_time = requery_data(pvc_indices[pvc_strings.index(pvc_select.value)])
             update_range(left_time, right_time)
 
         update_select()  # set initial display

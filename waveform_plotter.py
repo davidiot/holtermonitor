@@ -23,9 +23,13 @@ def render_full_plot(min=0,
     data_length = dm.query_length()
     pvcs = np.array(dm.query_pvcs())
 
+    title = "Holter Monitor Data Visualizer"
+    loading_mode = "loading..."
+    bio.curdoc().title = loading_mode
+
     tools = "crosshair,save,xbox_zoom,xpan"
 
-    fig = bp.figure(title="Holter Monitor Data Visualizer",
+    fig = bp.figure(title=title,
                     tools=tools,
                     x_axis_label="time (s)",
                     y_axis_label="ECG Signal (mV)",
@@ -87,13 +91,6 @@ def render_full_plot(min=0,
 
     pvc_strings = format_pvcs(pvcs)
 
-    loading_mode = "<div><b>loading...</b></div>"
-    hidden_mode = "<div hidden><b>loading...</b></div>"
-
-    loading_indicator = bmw.Div(
-        text=hidden_mode
-    )
-
     window_slider = bmw.Slider(
         title="Window (seconds)",
         value=3,
@@ -105,7 +102,8 @@ def render_full_plot(min=0,
     data_endpoints = [0, data_length]
 
     def requery_data(index):
-        loading_indicator.text = loading_mode
+        bio.curdoc().title = loading_mode
+        fig.title.text = loading_mode
         left_time, right_time = find_time_endpoints_from_index(index)
         center = (left_time + right_time) / 2
         data_endpoints[0] = center - query_window / 2
@@ -115,7 +113,8 @@ def render_full_plot(min=0,
             time=time,
             ecg=ecg
         )
-        loading_indicator.text = hidden_mode
+        bio.curdoc().title = title
+        fig.title.text = title
         return left_time, right_time
 
     def find_time_endpoints_from_index(index):
@@ -172,7 +171,6 @@ def render_full_plot(min=0,
     update_window()
     window_slider.on_change("value", lambda attr, old, new: update_window())
 
-    title = "Holter Monitor Data Visualizer"
     # bp.output_file(html_filename, title=title, mode="inline")
     # bp.show(fig)
 
@@ -181,13 +179,12 @@ def render_full_plot(min=0,
         bl.row(
             bl.column(
                 inputs,
-                window_slider,
-                loading_indicator
+                window_slider
             ),
             fig
         )
     )
-    bio.curdoc().title = title
+
     log.debug("Successfully rendered full plot")
 
 

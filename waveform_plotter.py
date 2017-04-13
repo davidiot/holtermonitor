@@ -99,6 +99,8 @@ def render_full_plot(min=0,
         step=1
     )
 
+    time_select = bmw.TextInput(title="Go to time: ")
+
     data_endpoints = [0, data_length]
 
     def requery_data(index):
@@ -136,6 +138,7 @@ def render_full_plot(min=0,
     def update_range(left_time, right_time):
         fig.x_range.start = left_time
         fig.x_range.end = right_time
+        time_select.value = display_time((left_time + right_time) / 2)
 
     if len(pvc_strings) > 0:
         pvc_select = bmw.Select(
@@ -174,11 +177,11 @@ def render_full_plot(min=0,
     # bp.output_file(html_filename, title=title, mode="inline")
     # bp.show(fig)
 
-    inputs = bl.widgetbox(pvc_select)
     bio.curdoc().add_root(
         bl.row(
             bl.column(
-                inputs,
+                time_select,
+                pvc_select,
                 window_slider
             ),
             fig

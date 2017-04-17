@@ -17,7 +17,7 @@ log = logging.getLogger("hm_logger")
 
 
 def render_full_plot(min=0,
-                     max=2.5,
+                     max=256,
                      query_window=60):
 
     data_length = dm.query_length()
@@ -395,7 +395,7 @@ def render_pvc_plot(time, ecg, pvcs, window=3, html_filename="pvcs.html"):
     ax[1].set_ylabel('PVC %')
     ax[0].set_title("PVC Analyzer")
     ax[0].set_xlabel('Time (seconds)')
-    ax[0].set_ylabel('ECG signal (mV)')
+    ax[0].set_ylabel('ECG signal (bits)')
 
     try:
         pvc_indices = pvcs[:, 0]

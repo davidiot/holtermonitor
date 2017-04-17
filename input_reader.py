@@ -80,11 +80,13 @@ def read_bin(filename="ecg.npy", folder="data/"):
     return time, ecg
 
 
-def read_txt(filename="ecg.txt", folder="data/"):
+def read_txt(filename="ecg.txt", folder="data/",
+             sample_rate=hmc.SAMPLE_RATE):
     """ reads ecg data from a text file generated using the memory system
     
     :param filename: name of .txt file
     :param folder: folder where data files are kept
+    :param sample_rate: sampling rate of the data
     :return: time data array, ecg data array
     """
 
@@ -95,7 +97,11 @@ def read_txt(filename="ecg.txt", folder="data/"):
         raise hme.InvalidFormatError(message)
     with open(file_path(folder, filename)) as f:
         lines = f.read().splitlines()
-        return [int(i) for i in lines]
+        ecg = np.array([int(i) for i in lines])
+        num_samples = len(ecg)
+        num_seconds = num_samples / sample_rate
+        time = np.linspace(0, num_seconds, num_samples)
+        return time, ecg
 
 
 def read_data(data_filename="ecg.lvm",

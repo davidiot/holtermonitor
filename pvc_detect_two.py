@@ -7,7 +7,18 @@ import matplotlib.pyplot as plt
 from input_reader import file_path
 import array
 import sys
+from scipy.signal import butter, lfilter, freqz
 
+def butter_lowpass(cutoff, fs, order=5):
+   nyq = 0.5 * fs
+   normal_cutoff = cutoff / nyq
+   b, a = butter(order, normal_cutoff, btype='low', analog=False)
+   return b, a
+
+def butter_lowpass_filter(data, cutoff, fs, order=5):
+   b, a = butter_lowpass(cutoff, fs, order=order)
+   y = lfilter(b, a, data)
+   return y
 
 def get_signal_data(fs, window, filename):
     """ reads ecg data from an LabView (.lvm) file and ensures proper window length
@@ -158,11 +169,12 @@ def process_pvc(signal, distances, averages, indexes, r_peaks, prematurity, comp
                     pvc_indexes_50.pop((len(pvc_indexes_50) - 1))
                     #print("****PVC75****", distances[i], r_peaks[i + 1], r_peak_times[i + 1], test_dist_percent_error,
                           #test_dist, averages[count])
-                    pvc_count += 1
+                    #pvc_count += 1
                     pvc_indexes_75.append(r_peaks[i + 1])
                     if signal[r_peaks[i + 1]] < mode:
                         pvc_indexes_75.pop((len(pvc_indexes_75) - 1))
                         pvc_indexes_100.append(r_peaks[i + 1])
+                        pvc_count += 1
     return pvc_indexes_25, pvc_indexes_50, pvc_indexes_75, pvc_indexes_100, pvc_count
 
 
@@ -178,7 +190,16 @@ def process_data(fs, window, signal):
     #signal = ecg
     #print(signal)
 
-    out = ecg.ecg(signal=signal, sampling_rate=fs, show=False)
+    y = butter_lowpass_filter(signal, cutoff=15, fs=fs, order=5)
+
+    plt.subplot(2, 1, 1)
+    plt.plot(signal, '-b')
+
+    plt.subplot(2, 1, 2)
+    plt.plot(y, '-g')
+    plt.show()
+
+    out = ecg.ecg(signal=y, sampling_rate=fs, show=False)
     r_peaks = out['rpeaks']
     filtered = out['filtered']
     distance_data = get_distances(r_peaks, fs)
@@ -187,7 +208,7 @@ def process_data(fs, window, signal):
     indexes = get_indexes(r_peak_times, window)
     averages = get_averages(distances, indexes)
 
-    pvc_indexes = process_pvc(filtered, distances, averages, indexes, r_peaks, .12, .05, .2)
+    pvc_indexes = process_pvc(filtered, distances, averages, indexes, r_peaks, .15, .05, .2)
     pvc_indexes_25=pvc_indexes[0]
     pvc_indexes_50=pvc_indexes[1]
     pvc_indexes_75=pvc_indexes[2]

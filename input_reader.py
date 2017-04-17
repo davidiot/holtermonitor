@@ -80,6 +80,24 @@ def read_bin(filename="ecg.npy", folder="data/"):
     return time, ecg
 
 
+def read_txt(filename="ecg.txt", folder="data/"):
+    """ reads ecg data from a text file generated using the memory system
+    
+    :param filename: name of .txt file
+    :param folder: folder where data files are kept
+    :return: time data array, ecg data array
+    """
+
+    extension = os.path.splitext(filename)[1]
+    if extension != ".txt":
+        message = filename + " was not a .txt file"
+        log.error(message)
+        raise hme.InvalidFormatError(message)
+    with open(file_path(folder, filename)) as f:
+        lines = f.read().splitlines()
+        return [int(i) for i in lines]
+
+
 def read_data(data_filename="ecg.lvm",
               folder="data/"):
     """ Read data from a file
@@ -96,6 +114,8 @@ def read_data(data_filename="ecg.lvm",
         time, ecg = read_bin(data_filename, folder)
     elif extension == ".tdms":
         time, ecg = read_tdms(data_filename, folder)
+    elif extension == ".txt":
+        time, ecg = read_txt(data_filename, folder)
     else:
         message = extension + " files are not supported yet"
         log.error(message)

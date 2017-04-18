@@ -158,11 +158,12 @@ def process_pvc(signal, distances, averages, indexes, r_peaks, prematurity, comp
                     pvc_indexes_50.pop((len(pvc_indexes_50) - 1))
                     #print("****PVC75****", distances[i], r_peaks[i + 1], r_peak_times[i + 1], test_dist_percent_error,
                           #test_dist, averages[count])
-                    pvc_count += 1
+
                     pvc_indexes_75.append(r_peaks[i + 1])
                     if signal[r_peaks[i + 1]] < mode:
                         pvc_indexes_75.pop((len(pvc_indexes_75) - 1))
                         pvc_indexes_100.append(r_peaks[i + 1])
+                        pvc_count += 1
     return pvc_indexes_25, pvc_indexes_50, pvc_indexes_75, pvc_indexes_100, pvc_count
 
 

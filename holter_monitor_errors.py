@@ -8,3 +8,7 @@ class DataFormatError(Exception):
 
 class InvalidFormatError(Exception):
     pass
+
+
+class InputError(Exception):
+    pass

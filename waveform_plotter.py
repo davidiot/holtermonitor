@@ -12,6 +12,7 @@ from bokeh.palettes import Reds8 as r8
 from mpld3 import plugins, utils
 import database_manager as dm
 import holter_monitor_constants as hmc
+import holter_monitor_errors as hme
 import logging
 log = logging.getLogger("hm_logger")
 
@@ -126,11 +127,35 @@ def render_full_plot(min=0,
         right_time = float(right) / hmc.SAMPLE_RATE
         return left_time, right_time
 
+    def safe_query(index):
+        left_time, right_time = requery_data(index) \
+            if not (fig.x_range.start and fig.x_range.end) \
+               or index < data_endpoints[0] * hmc.SAMPLE_RATE \
+               or index > data_endpoints[1] * hmc.SAMPLE_RATE \
+            else find_time_endpoints_from_index(index)
+        return left_time, right_time
+
+    def select_time():
+        time_string = time_select.value.strip()
+        try:
+            time = time_from_string(time_string)
+            left_time, right_time = safe_query(time * hmc.SAMPLE_RATE)
+            update_range(left_time, right_time)
+        except hme.InputError:
+            refresh_data()
+
+    time_callback = lambda attr, old, new: select_time()
+    time_select.on_change("value", time_callback)
+
     def refresh_data():
-        if fig.x_range.start and fig.x_range.start < data_endpoints[0]:
-            requery_data(fig.x_range.start * hmc.SAMPLE_RATE)
-        elif fig.x_range.end and fig.x_range.end > data_endpoints[1]:
-            requery_data(fig.x_range.end * hmc.SAMPLE_RATE)
+        if fig.x_range.start and fig.x_range.end:
+            if fig.x_range.start < data_endpoints[0]:
+                requery_data(fig.x_range.start * hmc.SAMPLE_RATE)
+            elif fig.x_range.end > data_endpoints[1]:
+                requery_data(fig.x_range.end * hmc.SAMPLE_RATE)
+            time_select.remove_on_change("value", time_callback)
+            time_select.value = display_time((fig.x_range.start + fig.x_range.end) / 2)
+            time_select.on_change("value", time_callback)
 
     fig.x_range.on_change('start', lambda attr, old, new: refresh_data())
     fig.x_range.on_change('end', lambda attr, old, new: refresh_data())
@@ -138,7 +163,6 @@ def render_full_plot(min=0,
     def update_range(left_time, right_time):
         fig.x_range.start = left_time
         fig.x_range.end = right_time
-        time_select.value = display_time((left_time + right_time) / 2)
 
     if len(pvc_strings) > 0:
         pvc_select = bmw.Select(
@@ -149,11 +173,7 @@ def render_full_plot(min=0,
 
         def update_select():
             index = pvc_indices[pvc_strings.index(pvc_select.value)]
-            left_time, right_time = requery_data(index) \
-                if not (fig.x_range.start and fig.x_range.end) \
-                   or index < data_endpoints[0] * hmc.SAMPLE_RATE \
-                   or index > data_endpoints[1] * hmc.SAMPLE_RATE \
-                else find_time_endpoints_from_index(index)
+            left_time, right_time = safe_query(index)
             update_range(left_time, right_time)
 
         update_select()  # set initial display
@@ -224,6 +244,39 @@ def display_time(time):
     else:
         return str(int(time / 3600)) + "h " + \
                str(int(round((time % 3600) / 60))) + "m"
+
+
+def time_from_string(str):
+    """ inverse operation of display_time
+    
+    :param str: string that represents a time
+    :return: time in seconds
+    """
+    try:
+        split_s = [s.strip() for s in str.split("s")]
+        if len(split_s) != 2 or split_s[1] != "":
+            raise hme.InputError()
+
+        split_m = [s.strip() for s in split_s[0].split("m")]
+        if len(split_m) > 2:
+            raise hme.InputError()
+        elif len(split_m) == 1:
+            seconds = int(split_m[0])
+            return seconds
+        elif len(split_m) == 2:
+            seconds = int(split_m[1])
+            split_h = [s.strip() for s in split_m[0].split("h")]
+            if len(split_h) > 2:
+                raise hme.InputError()
+            elif len(split_h) == 1:
+                minutes = int(split_h[0])
+                return seconds + 60 * minutes
+            elif len(split_h) == 2:
+                hours = int(split_h[0])
+                minutes = int(split_h[1])
+                return seconds + 60 * minutes + 3600 * hours
+    except ValueError:
+        raise hme.InputError()
 
 
 class LinkedView(plugins.PluginBase):

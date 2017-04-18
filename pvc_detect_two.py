@@ -1,4 +1,5 @@
 import holter_monitor_errors as hme
+import holter_monitor_constants as hmc
 import numpy as np
 import lvm_read as lr
 import os.path
@@ -7,6 +8,7 @@ import matplotlib.pyplot as plt
 from input_reader import file_path
 import array
 import sys
+import filter_functions as ff
 
 
 def get_signal_data(fs, window, filename):
@@ -179,7 +181,18 @@ def process_data(fs, window, signal):
     #signal = ecg
     #print(signal)
 
-    out = ecg.ecg(signal=signal, sampling_rate=fs, show=False)
+    lpf_signal = ff.butter_lowpass_filter(data=signal, cutoff=hmc.CUTOFF, fs=hmc.SAMPLE_RATE, order=5)
+
+    plt.subplot(2, 1, 1)
+    plt.plot(signal, '-b')
+    plt.title('Unfiltered Data')
+
+    plt.subplot(2, 1, 2)
+    plt.plot(lpf_signal, '-g')
+    plt.title('Filtered Data')
+    plt.show()
+
+    out = ecg.ecg(signal=lpf_signal, sampling_rate=fs, show=False)
     r_peaks = out['rpeaks']
     filtered = out['filtered']
     distance_data = get_distances(r_peaks, fs)

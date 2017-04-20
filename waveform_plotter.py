@@ -18,7 +18,7 @@ log = logging.getLogger("hm_logger")
 
 
 def render_full_plot(min=0,
-                     max=256,
+                     max=3,
                      query_window=60):
 
     data_length = dm.query_length()
@@ -33,7 +33,7 @@ def render_full_plot(min=0,
     fig = bp.figure(title=title,
                     tools=tools,
                     x_axis_label="time (s)",
-                    y_axis_label="ECG Signal (mV)",
+                    y_axis_label="ECG Signal (V)",
                     y_range=(min, max))
 
     line_source = bm.ColumnDataSource(
@@ -197,14 +197,39 @@ def render_full_plot(min=0,
     # bp.output_file(html_filename, title=title, mode="inline")
     # bp.show(fig)
 
+    length_indicator = bmw.Div(
+        text="""
+            <b>{length} of data uploaded</b>
+            """.format(length=display_time(data_length / hmc.SAMPLE_RATE))
+    )
+
+    pvc_info_string = bmw.Div(
+        text="""
+            PVCs are detected by checking the following criteria in order:
+            <br>
+            1. <b>Prematurity</b>: the RR interval length between the PVC and 
+            the beat before the PVC is shorter than the average<br>
+            2. <b>Compensatory</b>: the RR interval length between the PVC and 
+            the beat after the PVC is longer than the average<br>
+            3. <b>Distance</b>: the distance between the beat before the PVC and 
+            the beat after the PVC is the same as the average<br>
+            4. <b>Mode</b>: the amplitude of the actual PVCs have been negative in all cases, 
+            so this final check ensures that the amplitude of the data point is below the mode of the data<br>
+            """
+    )
+
+    controls = bl.column(
+        length_indicator,
+        time_select,
+        pvc_select,
+        window_slider,
+        pvc_info_string
+    )
+
     bio.curdoc().add_root(
         bl.row(
-            bl.column(
-                time_select,
-                pvc_select,
-                window_slider
-            ),
-            fig
+            fig,
+            controls
         )
     )
 

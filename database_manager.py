@@ -57,16 +57,17 @@ def query_data(start, end):
               """, [start, end]).fetchall()
     time, ecg = zip(*result)
     c.close()
-    return time, ecg
+    return time, [float(3 / 256 * s) for s in ecg]
 
 
 def query_point(point):
     conn = sql3.connect('hmdata.db')
     c = conn.cursor()
-    result = c.execute("""
+    time, ecg = c.execute("""
               SELECT TIME, ECG FROM ecg_data
               WHERE IND = ?
               ORDER BY TIME
               """, [int(point)]).fetchone()
     c.close()
+    result = (time, float(3 / 256 * ecg))
     return result

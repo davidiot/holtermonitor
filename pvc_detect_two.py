@@ -1,4 +1,5 @@
 import holter_monitor_errors as hme
+import holter_monitor_constants as hmc
 import numpy as np
 import lvm_read as lr
 import os.path
@@ -7,6 +8,7 @@ import matplotlib.pyplot as plt
 from input_reader import file_path
 import array
 import sys
+import filter_functions as ff
 
 
 def get_signal_data(fs, window, filename):
@@ -158,11 +160,12 @@ def process_pvc(signal, distances, averages, indexes, r_peaks, prematurity, comp
                     pvc_indexes_50.pop((len(pvc_indexes_50) - 1))
                     #print("****PVC75****", distances[i], r_peaks[i + 1], r_peak_times[i + 1], test_dist_percent_error,
                           #test_dist, averages[count])
-                    pvc_count += 1
+
                     pvc_indexes_75.append(r_peaks[i + 1])
                     if signal[r_peaks[i + 1]] < mode:
                         pvc_indexes_75.pop((len(pvc_indexes_75) - 1))
                         pvc_indexes_100.append(r_peaks[i + 1])
+                        pvc_count += 1
     return pvc_indexes_25, pvc_indexes_50, pvc_indexes_75, pvc_indexes_100, pvc_count
 
 
@@ -178,7 +181,18 @@ def process_data(fs, window, signal):
     #signal = ecg
     #print(signal)
 
-    out = ecg.ecg(signal=signal, sampling_rate=fs, show=False)
+    lpf_signal = ff.butter_lowpass_filter(data=signal, cutoff=hmc.CUTOFF, fs=hmc.SAMPLE_RATE, order=5)
+
+    plt.subplot(2, 1, 1)
+    plt.plot(signal, '-b')
+    plt.title('Unfiltered Data')
+
+    plt.subplot(2, 1, 2)
+    plt.plot(lpf_signal, '-g')
+    plt.title('Filtered Data')
+    plt.show()
+
+    out = ecg.ecg(signal=lpf_signal, sampling_rate=fs, show=False)
     r_peaks = out['rpeaks']
     filtered = out['filtered']
     distance_data = get_distances(r_peaks, fs)

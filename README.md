@@ -9,9 +9,11 @@ BME 464L: Medical Instrument Design
 
 + to upload data into the database: ```python holter_monitor.py --upload``` followed by the name of a data file located in the ```data/``` directory.
 
-+ to run the server on a configured Duke VM: ```bokeh serve holter_monitor.py --port 5100 --host 152.3.52.29:80```.
++ to run the server on a configured Duke VM: ```bokeh serve holter_monitor.py --port 5100 --allow-websocket-origin=152.3.52.29```.
 
 + to kill the server: ```fuser -k 5100/tcp```.
+
++ our server is located at ```colab-sbx-276.oit.duke.edu```.
 
 ## Known Issues:
 

@@ -57,7 +57,7 @@ def query_data(start, end):
               """, [start, end]).fetchall()
     time, ecg = zip(*result)
     c.close()
-    return time, [float(3 / 256 * s) for s in ecg]
+    return time, [float(s) for s in ecg]
 
 
 def query_point(point):
@@ -69,5 +69,5 @@ def query_point(point):
               ORDER BY TIME
               """, [int(point)]).fetchone()
     c.close()
-    result = (time, float(3 / 256 * ecg))
+    result = (time, float(ecg))
     return result

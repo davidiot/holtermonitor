@@ -18,8 +18,8 @@ log = logging.getLogger("hm_logger")
 
 
 def render_full_plot(min=0,
-                     max=3,
-                     query_window=60):
+                     max=2,
+                     query_window=80):
 
     data_length = dm.query_length()
     pvcs = np.array(dm.query_pvcs())
